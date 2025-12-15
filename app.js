@@ -18,6 +18,7 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./MODELS/user.js");
 const dbUrl = process.env.MONGODB_URL;
+const PORT = process.env.PORT;
 
 
 const Listing = require("./MODELS/listing.js");
@@ -74,7 +75,7 @@ main()
 //     await mongoose.connect(dbUrl);
 // }
 
-app.listen(3000,()=>{
+app.listen(PORT,()=>{
     console.log("Listening to port 3000");
 });
 
