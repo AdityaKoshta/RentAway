@@ -1,7 +1,7 @@
 <% layout("/layouts/boilerplate") %>
 <script>
   const mapToken = "<%=process.env.MAP_TOKEN%>";
-  const coordinates = <%- JSON.stringify(listing.geometry.coordinates) %>; 
+  const coordinates = <%- JSON.stringify(listing.geometry.coordinates) %>;
 </script>
 
 <div class="row col mt-3">
@@ -22,10 +22,25 @@
               Owned by <i><%= listing.owner.username %></i>
             </p>
             <p class="card-text">
-              <%= listing.price.toLocaleString("en-IN") %>
+              ₹<%= listing.price.toLocaleString("en-IN") %> / night
             </p>
             <p class="card-text"><%= listing.location %></p>
             <p class="card-text"><%= listing.country %></p>
+
+            <!-- ✅ BOOKING BUTTON SECTION -->
+            <% if(currUser && !listing.owner._id.equals(currUser._id)) { %>
+            <a
+              href="/listings/<%= listing._id %>/book"
+              class="btn btn-success w-100 mt-2"
+            >
+              Book Now
+            </a>
+            <% } else if(!currUser) { %>
+            <a href="/login" class="btn btn-outline-success w-100 mt-2">
+              Login to Book
+            </a>
+            <% } %>
+            <!-- ✅ END BOOKING BUTTON SECTION -->
           </div>
         </div>
       </div>
@@ -45,7 +60,6 @@
     <button class="btn btn-dark offset-2">Delete</button>
   </form>
 </div>
-
 <% } %>
 
 <hr />
@@ -59,11 +73,6 @@
     novalidate
     class="needs-validation"
   >
-    <!-- <div class="mb-3 mt-3">
-            <label for="rating" class="form-label">Rating</label>
-            <input type="range" min="1", max="5", id="rating", name="review[rating]" class="form-range">
-        </div> -->
-
     <div class="mb-3 mt-3">
       <label for="rating" class="form-label">Rating</label>
       <fieldset class="starability-slot">
@@ -104,9 +113,7 @@
     <button class="btn btn-outline-dark">Submit</button>
   </form>
   <hr />
-  <% } %>
-
-<% if(listing.reviews.length > 0) {%>
+  <% } %> <% if(listing.reviews.length > 0) {%>
   <div class="row">
     <p><b>All Reviews</b></p>
     <% for(review of listing.reviews) {%>
@@ -129,14 +136,12 @@
     </div>
     <% } %>
   </div>
-<% } %>
+  <% } %>
+
   <div class="col-6 mb-3">
     <h3>Where you'll be</h3>
-    <div id="map">
-
-    </div>
+    <div id="map"></div>
   </div>
-  
 </div>
 
 <script src="/js/map.js"></script>
