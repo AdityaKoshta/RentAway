@@ -57,55 +57,89 @@ router.get("/search", async (req, res) => {
 =================== */
 
 // ✅ Show booking form page
+const Booking = require("../MODELS/booking");
+const sendEmail = require("../utils/sendEmail"); 
 
+// Make sure you have your email function
+
+// Show booking form page
 router.get("/:id/book", isLoggedIn, async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id);
   res.render("bookings/new", { listing });
 });
 
-// ✅ Handle booking form submission and send confirmation email
-
-const sendEmail = require("../utils/sendEmail");
-
+// Handle booking submission
 router.post("/:id/book", isLoggedIn, async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id);
-  const { booking } = req.body; // contains booking info (e.g., checkIn, checkOut, guests)
-  const userEmail = req.user.email; // logged-in user's email
+  const { checkIn, checkOut, guests } = req.body; // Form fields
 
-  // 📨 Email content
-  const message = `
-    <h2>Booking Confirmation</h2>
-    <p>Dear ${req.user.username},</p>
-    <p>Your booking for <b>${listing.title}</b> has been successfully confirmed!</p>
-    <p><b>Booking Details:</b></p>
-    <ul>
-      <li>Check-in: ${booking.checkIn}</li>
-      <li>Check-out: ${booking.checkOut}</li>
-      <li>Guests: ${booking.guests}</li>
-    </ul>
-    <p>We’ll reach out to you soon with more information.</p>
-    <br/>
-    <p>Thanks for choosing <b>RentAway</b> 🏡</p>
-  `;
+  const newBooking = new Booking({
+    listing: listing._id,
+    user: req.user._id,
+    checkIn,
+    checkOut,
+    guests
+  });
 
-  try {
-    // Send email
-    await sendEmail({
-      email: userEmail,
-      subject: "Your RentAway Booking Confirmation",
-      message,
-    });
+  await newBooking.save();
 
-    req.flash("success", "Booking confirmed! Confirmation email sent successfully.");
-  } catch (error) {
-    console.error("Email Error:", error);
-    req.flash("error", "Booking saved, but failed to send confirmation email.");
+  listing.bookings.push(newBooking._id);
+  await listing.save();
+
+   req.flash("success", "Booking confirmed! Confirmation email sent.");
+  res.redirect(`/listings/${id}`);
+
+  // Send confirmation email
+  await sendEmail({
+    email: req.user.email,
+    subject: "Booking Confirmed - RentAway",
+    message: `
+      <h2>Booking Confirmed</h2>
+      <p>Your booking for <b>${listing.title}</b> is confirmed!</p>
+      <p>Check-in: ${checkIn}</p>
+      <p>Check-out: ${checkOut}</p>
+      <p>Guests: ${guests}</p>
+    `
+  });
+
+});
+
+// Cancel booking route
+router.post("/:id/cancel", isLoggedIn, async (req, res) => {
+  const booking = await Booking.findOne({
+    listing: req.params.id,
+    user: req.user._id,
+    status: "confirmed"
+  }).populate("listing"); // populate to get listing title
+
+  if (!booking) {
+    req.flash("error", "No active booking found to cancel.");
+    return res.redirect(`/listings/${req.params.id}`);
   }
 
-  res.redirect(`/listings/${id}`);
+  booking.status = "cancelled";
+  await booking.save();
+
+  // Send cancellation email
+  await sendEmail({
+    email: req.user.email,
+    subject: "Booking Cancelled - Wanderlust",
+    message: `
+      <h2>Booking Cancelled</h2>
+      <p>Your booking for <b>${booking.listing.title}</b> has been cancelled.</p>
+      <p>Check-in: ${booking.checkIn}</p>
+      <p>Check-out: ${booking.checkOut}</p>
+      <p>Guests: ${booking.guests}</p>
+    `
+  });
+
+  req.flash("success", "Booking cancelled successfully! Cancellation email sent.");
+  res.redirect(`/listings/${req.params.id}`);
 });
+
+
 
 
 /* ===================

@@ -28,14 +28,28 @@
             <p class="card-text"><%= listing.country %></p>
 
             <!-- ✅ BOOKING BUTTON SECTION -->
-            <% if(currUser && !listing.owner._id.equals(currUser._id)) { %>
+            <% if(currUser && !listing.owner._id.equals(currUser._id)) { %> <%
+            // Check if the current user has already booked this listing const
+            userBooking = listing.bookings?.find(b =>
+            b.user.equals(currUser._id) && b.status === "confirmed" ); %> <%
+            if(!userBooking) { %>
+            <!-- Book Now button -->
             <a
               href="/listings/<%= listing._id %>/book"
               class="btn btn-success w-100 mt-2"
             >
               Book Now
             </a>
-            <% } else if(!currUser) { %>
+            <% } else { %>
+            <!-- Cancel Booking button -->
+            <form
+              action="/listings/<%= listing._id %>/cancel"
+              method="POST"
+              class="mt-2"
+            >
+              <button class="btn btn-danger w-100">Cancel Booking</button>
+            </form>
+            <% } %> <% } else if(!currUser) { %>
             <a href="/login" class="btn btn-outline-success w-100 mt-2">
               Login to Book
             </a>
