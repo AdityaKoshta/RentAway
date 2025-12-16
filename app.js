@@ -19,7 +19,7 @@ const LocalStrategy = require("passport-local");
 const User = require("./MODELS/user.js");
 const dbUrl = process.env.MONGODB_URL;
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000 ;
 
 
 const Listing = require("./MODELS/listing.js");
